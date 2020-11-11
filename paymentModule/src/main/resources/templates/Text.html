@@ -1,0 +1,99 @@
+
+
+<!DOCTYPE HTML>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+<meta charset="utf-8">
+
+
+<link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+ <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+ <script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
+ <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.0.0/css/font-awesome.min.css">
+<title>Texting Application</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+
+</head>
+<body>
+	<!-- 	<div align="center">
+		<a th:href="@{dashboard}">DashBoard</a> <a th:href="@{}"></a> <a
+			th:href="@{}"></a> <a th:href="@{}"></a>  -->
+	</div>
+	<h1>Text Client</h1>
+	<div>
+		<form id="firstForm" method="post" action="#" th:action="@{/sendSms}"
+			th:object="${smsRequest}">
+			<p>
+			<table>
+				<tr>
+					<td><label>Call To:</label></td>
+					<td><input type="text" th:name="PhoneNumber" /></td>
+				</tr>
+				<tr>
+					<td><label>Message:</label></td>
+					<td><textarea placeholder="Type message.." required
+							th:name="message"></textarea></td>
+				</tr>
+			</table>
+			<!-- <form:input path = "PhoneNumber"/> 
+        Number: <input type="text" th:field="*{PhoneNumber}"  /> -->
+
+			<!--  <form:input path="Message:"/> 
+         Message:<textarea placeholder="Type message.." th:field="*{message}" required></textarea>-->
+
+
+			<p>
+				<input form="firstForm" type="submit" value="Submit" /> <input
+					type="reset" value="Reset">
+			</p>
+		</form>
+		<!-- <form action="#" th:action="@{/sendSms}"  th:object="${SmsRequest}"  method="post">
+   
+</form> -->
+	</div>
+	<button id="open-button" onclick="openForm()">Chat</button>
+	<div class="chat-popup" id="myForm">
+		<form action="#" th:action="@{/receivedSms}"
+			th:object="${chatMessage}" class="form-container">
+			<h1>Chat</h1>
+
+			<label for="msg"><b>Message</b></label> <span
+				th:text="'content:' + ${content}"></span> <span
+				th:text="'sender:' + ${sender}"></span>
+
+
+			<button type="button" class="btn cancel" onclick="closeForm()">Close</button>
+		</form>
+	</div>
+	
+	
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ho+j7jyWK8fNQe+A12Hb8AhRq26LrZ/JpcUGGOn+Y7RsweNrtN/tE3MoK7ZeZDyx" crossorigin="anonymous"></script>
+
+</body>
+<script>
+	function openForm() {
+		document.getElementById("myForm").style.display = "block";
+	}
+
+	function closeForm() {
+		document.getElementById("myForm").style.display = "none";
+	}
+
+	window.onload = function hideBoth() {
+		document.getElementById("myForm").style.display = "none";
+
+	}
+
+	function showBoth() {
+		document.getElementById("myForm").style.visibility = "visible";
+		document.getElementById("open-button").style.visibility = "visible";
+	}
+	
+</script>
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ho+j7jyWK8fNQe+A12Hb8AhRq26LrZ/JpcUGGOn+Y7RsweNrtN/tE3MoK7ZeZDyx" crossorigin="anonymous"></script>
+
+
+</html>

@@ -1,0 +1,746 @@
+
+Home java java tutorial mysql hibernate spring 4 login example
+Spring Boot Tutorial Spring MVC Registration, Login Example using Hibernate + Mysql + Bootstrap 4
+in java java tutorial published on April 19, 2018
+Overview
+In this tutorial, we show you how to develop a simple Spring Boot application for registration, login with Spring MVC, Hibernate, Mysql Database and the Thymeleaf java library as a template engine to display data on front end with Bootstrap 4 responsive.
+Follow the steps mentioned below to develop the Spring 4 Login Example.
+
+spring boot spring mvc hibernate Mysql sign up login page
+Learn with Video tutorials
+Spring Boot Registration, Login Page Part 1
+Spring Boot Registration, Login Page Part 2
+
+Prerequisites
+
+    Eclipse Oxygen and Install Spring Tool Suite for Eclipse IDE
+    Spring Boot v2.0.0.RELEASE
+    Spring Security
+    Spring MVC
+    Spring Data JPA
+    Thymeleaf
+    Bootstrap 4
+    Java 8
+
+MySQL create database and tables
+Run the following SQL scripts below from MySQL Query Browse.
+
+CREATE DATABASE `jackrutorial` /*!40100 DEFAULT CHARACTER SET utf8 */;
+
+DROP TABLE IF EXISTS `role`;
+CREATE TABLE  `role` (
+  `role_id` int(11) NOT NULL auto_increment,
+  `role` varchar(255) default NULL,
+  PRIMARY KEY  (`role_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `user`;
+CREATE TABLE  `user` (
+  `id` int(11) NOT NULL auto_increment,
+  `firstname` varchar(255) NOT NULL,
+  `lastname` varchar(255) NOT NULL,
+  `email` varchar(255) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  `active` int(11) default NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `user_role`;
+CREATE TABLE  `user_role` (
+  `user_id` int(11) NOT NULL,
+  `role_id` int(11) NOT NULL,
+  PRIMARY KEY  (`user_id`,`role_id`),
+  KEY `user_role_key` (`role_id`),
+  CONSTRAINT `user_userrole` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`),
+  CONSTRAINT `role_userrole` FOREIGN KEY (`role_id`) REFERENCES `role` (`role_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `persistent_logins`;
+CREATE TABLE  `persistent_logins` (
+  `username` varchar(64) NOT NULL,
+  `series` varchar(64) NOT NULL,
+  `token` varchar(64) NOT NULL,
+  `last_used` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
+  PRIMARY KEY  (`series`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+INSERT INTO `role` VALUES (1,'ADMIN');
+
+Create project directory structure
+The following screenshot shows final structure of the project.
+Spring Boot User Registration Login project structure
+Creating the Spring Boot Project
+
+Launch Eclipse IDE. Go to File -> New -> Other... Select Spring Starter Project under Spring Boot category then click Next as shown below
+
+
+Spring Starter Project
+
+In the next screen, you enter the content as shown below then click Next
+new spring starter project
+
+In the next step, you choose Spring Boot Version is 2.0.0 and choose the JPA +MySQL + Security + Thymeleaf + Web, then click Finish.
+new-spring-starter-project-dependencies
+
+Project dependencies
+Add the nekohtml to the project's pom.xml, following is the updated pom.xml file.
+
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+ <modelVersion>4.0.0</modelVersion>
+
+ <groupId>com.jackrutorial</groupId>
+ <artifactId>SpringBootSigninSignupExample</artifactId>
+ <version>0.0.1-SNAPSHOT</version>
+ <packaging>jar</packaging>
+
+ <name>SpringBootSigninSignupExample</name>
+ <description>Demo project for Spring Boot</description>
+
+ <parent>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-parent</artifactId>
+  <version>2.0.0.RELEASE</version>
+  <relativePath/> <!-- lookup parent from repository -->
+ </parent>
+
+ <properties>
+  <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+  <java.version>1.8</java.version>
+ </properties>
+
+ <dependencies>
+  <dependency>
+   <groupId>org.springframework.boot</groupId>
+   <artifactId>spring-boot-starter-data-jpa</artifactId>
+  </dependency>
+  <dependency>
+   <groupId>org.springframework.boot</groupId>
+   <artifactId>spring-boot-starter-security</artifactId>
+  </dependency>
+  <dependency>
+   <groupId>org.springframework.boot</groupId>
+   <artifactId>spring-boot-starter-thymeleaf</artifactId>
+  </dependency>
+  <dependency>
+   <groupId>org.springframework.boot</groupId>
+   <artifactId>spring-boot-starter-web</artifactId>
+  </dependency>
+
+  <dependency>
+   <groupId>mysql</groupId>
+   <artifactId>mysql-connector-java</artifactId>
+   <scope>runtime</scope>
+  </dependency>
+  <dependency>
+   <groupId>org.springframework.boot</groupId>
+   <artifactId>spring-boot-starter-test</artifactId>
+   <scope>test</scope>
+  </dependency>
+  <dependency>
+   <groupId>org.springframework.security</groupId>
+   <artifactId>spring-security-test</artifactId>
+   <scope>test</scope>
+  </dependency>
+  <dependency>
+   <groupId>net.sourceforge.nekohtml</groupId>
+   <artifactId>nekohtml</artifactId>
+  </dependency>
+ </dependencies>
+
+ <build>
+  <plugins>
+   <plugin>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-maven-plugin</artifactId>
+   </plugin>
+  </plugins>
+ </build>
+</project>
+
+
+User Model and Mapping File
+Define the entity classes that will be mapped to the tables we saw earlier.
+Create a User class under com.jackrutorial.model package with the following contents.
+User Entity
+
+package com.jackrutorial.model;
+
+import java.util.Set;
+
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
+import javax.persistence.Table;
+
+@Entity
+@Table(name = "user")
+public class User {
+ 
+ @Id
+ @GeneratedValue(strategy = GenerationType.AUTO)
+ private int id;
+ 
+ @Column(name = "email")
+ private String email;
+ 
+ @Column(name = "firstname")
+ private String firstname; 
+ 
+ @Column(name = "lastname")
+ private String lastname;
+ 
+ @Column(name = "password")
+ private String password;
+ 
+ @Column(name = "active")
+ private int active;
+ 
+ @ManyToMany(cascade=CascadeType.ALL)
+ @JoinTable(name="user_role", joinColumns=@JoinColumn(name="user_id"), inverseJoinColumns=@JoinColumn(name="role_id"))
+ private Set<Role> roles;
+
+ public int getId() {
+  return id;
+ }
+
+ public void setId(int id) {
+  this.id = id;
+ }
+
+ public String getEmail() {
+  return email;
+ }
+
+ public void setEmail(String email) {
+  this.email = email;
+ }
+
+ public String getFirstname() {
+  return firstname;
+ }
+
+ public void setFirstname(String firstname) {
+  this.firstname = firstname;
+ }
+
+ public String getLastname() {
+  return lastname;
+ }
+
+ public void setLastname(String lastname) {
+  this.lastname = lastname;
+ }
+
+ public String getPassword() {
+  return password;
+ }
+
+ public void setPassword(String password) {
+  this.password = password;
+ }
+
+ public int getActive() {
+  return active;
+ }
+
+ public void setActive(int active) {
+  this.active = active;
+ }
+
+ public Set<Role> getRoles() {
+  return roles;
+ }
+
+ public void setRoles(Set<Role> roles) {
+  this.roles = roles;
+ }
+}
+
+
+Role Entity
+Create a Role class under com.jackrutorial.model package with the following contents.
+
+package com.jackrutorial.model;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+@Entity
+@Table(name="role")
+public class Role {
+ 
+ @Id
+ @GeneratedValue(strategy=GenerationType.AUTO)
+ @Column(name="role_id")
+ private int id;
+ 
+ @Column(name="role")
+ private String role;
+
+ public int getId() {
+  return id;
+ }
+
+ public void setId(int id) {
+  this.id = id;
+ }
+
+ public String getRole() {
+  return role;
+ }
+
+ public void setRole(String role) {
+  this.role = role;
+ }
+}
+
+
+JPA Repositories
+Let’s define the Repositories for accessing the User and Role details from the database. We’ll extend the repositories from Spring Data JPA’s JpaRepository interface.
+Create a UserRepository interface under com.jackrutorial.repository package and write the following code in it.
+
+UserRepository.java
+
+package com.jackrutorial.repository;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import com.jackrutorial.model.User;
+
+@Repository("userRepository")
+public interface UserRepository extends JpaRepository<User, Long> {
+ 
+ User findByEmail(String email);
+}
+
+Create a RoleRespository interface under com.jackrutorial.repository package and write the following code in it.
+
+RoleRespository.java
+
+package com.jackrutorial.repository;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import com.jackrutorial.model.Role;
+
+@Repository("roleRepository")
+public interface RoleRespository extends JpaRepository<Role, Integer> {
+
+ Role findByRole(String role);
+}
+
+Service Layer
+Create a UserService class under com.jackrutorial.service package and write the following code in it.
+UserService.java
+
+package com.jackrutorial.service;
+
+import com.jackrutorial.model.User;
+
+public interface UserService {
+  
+ public User findUserByEmail(String email);
+ 
+ public void saveUser(User user);
+}
+
+
+Create a UserServiceImpl class implements UserService Interface under com.jackrutorial.service package and write the following code in it.
+UserServiceImpl.java
+
+package com.jackrutorial.service;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import com.jackrutorial.model.Role;
+import com.jackrutorial.model.User;
+import com.jackrutorial.repository.RoleRespository;
+import com.jackrutorial.repository.UserRepository;
+import java.util.Arrays;
+import java.util.HashSet;
+
+@Service("userService")
+public class UserServiceImpl implements UserService {
+ 
+ @Autowired
+ private UserRepository userRepository;
+ 
+ @Autowired
+ private RoleRespository roleRespository;
+ 
+ @Autowired
+ private BCryptPasswordEncoder bCryptPasswordEncoder;
+
+ @Override
+ public User findUserByEmail(String email) {
+  return userRepository.findByEmail(email);
+ }
+
+ @Override
+ public void saveUser(User user) {
+  user.setPassword(bCryptPasswordEncoder.encode(user.getPassword()));
+  user.setActive(1);
+  Role userRole = roleRespository.findByRole("ADMIN");
+  user.setRoles(new HashSet<Role>(Arrays.asList(userRole)));
+  userRepository.save(user);
+ }
+
+}
+
+
+Configuration Application
+Create a SecurityConfiguration class under com.jackrutorial.configuration package and write the following code in it.
+SecurityConfiguration.java
+
+package com.jackrutorial.configuration;
+
+import javax.sql.DataSource;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.web.authentication.rememberme.JdbcTokenRepositoryImpl;
+import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+
+@Configuration
+@EnableWebSecurity
+public class SecurityConfiguration extends WebSecurityConfigurerAdapter{
+
+ @Autowired
+ private BCryptPasswordEncoder bCryptPasswordEncoder;
+ 
+ @Autowired
+ private DataSource dataSource;
+ 
+ private final String USERS_QUERY = "select email, password, active from user where email=?";
+ private final String ROLES_QUERY = "select u.email, r.role from user u inner join user_role ur on (u.id = ur.user_id) inner join role r on (ur.role_id=r.role_id) where u.email=?";
+
+ @Override
+ protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+  auth.jdbcAuthentication()
+   .usersByUsernameQuery(USERS_QUERY)
+   .authoritiesByUsernameQuery(ROLES_QUERY)
+   .dataSource(dataSource)
+   .passwordEncoder(bCryptPasswordEncoder);
+ }
+ 
+ @Override
+ protected void configure(HttpSecurity http) throws Exception{
+  http.authorizeRequests()
+   .antMatchers("/").permitAll()
+   .antMatchers("/login").permitAll()
+   .antMatchers("/signup").permitAll()
+   .antMatchers("/home/**").hasAuthority("ADMIN").anyRequest()
+   .authenticated().and().csrf().disable()
+   .formLogin().loginPage("/login").failureUrl("/login?error=true")
+   .defaultSuccessUrl("/home/home")
+   .usernameParameter("email")
+   .passwordParameter("password")
+   .and().logout()
+   .logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
+   .logoutSuccessUrl("/")
+   .and().rememberMe()
+   .tokenRepository(persistentTokenRepository())
+   .tokenValiditySeconds(60*60)
+   .and().exceptionHandling().accessDeniedPage("/access_denied");
+ }
+ 
+ @Bean
+ public PersistentTokenRepository persistentTokenRepository() {
+  JdbcTokenRepositoryImpl db = new JdbcTokenRepositoryImpl();
+  db.setDataSource(dataSource);
+  
+  return db;
+ }
+}
+
+Create a WebMvcConfig class under com.jackrutorial.configuration package and write the following code in it.
+WebMvcConfig.java
+
+package com.jackrutorial.configuration;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+@Configuration
+public class WebMvcConfig implements WebMvcConfigurer {
+ 
+ @Bean
+ public BCryptPasswordEncoder passwordEncoder() {
+  BCryptPasswordEncoder bCryptPasswordEncoder = new BCryptPasswordEncoder();
+  return bCryptPasswordEncoder;
+ }
+}
+
+Controller Layer
+Create a UserController class under com.jackrutorial.controller package and write the following code in it.
+UserController.java
+
+package com.jackrutorial.controller;
+
+import javax.validation.Valid;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Controller;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.jackrutorial.model.User;
+import com.jackrutorial.service.UserService;
+
+@Controller
+public class UserController {
+
+ @Autowired
+ private UserService userService;
+ 
+ @RequestMapping(value= {"/", "/login"}, method=RequestMethod.GET)
+ public ModelAndView login() {
+  ModelAndView model = new ModelAndView();
+  
+  model.setViewName("user/login");
+  return model;
+ }
+ 
+ @RequestMapping(value= {"/signup"}, method=RequestMethod.GET)
+ public ModelAndView signup() {
+  ModelAndView model = new ModelAndView();
+  User user = new User();
+  model.addObject("user", user);
+  model.setViewName("user/signup");
+  
+  return model;
+ }
+ 
+ @RequestMapping(value= {"/signup"}, method=RequestMethod.POST)
+ public ModelAndView createUser(@Valid User user, BindingResult bindingResult) {
+  ModelAndView model = new ModelAndView();
+  User userExists = userService.findUserByEmail(user.getEmail());
+  
+  if(userExists != null) {
+   bindingResult.rejectValue("email", "error.user", "This email already exists!");
+  }
+  if(bindingResult.hasErrors()) {
+   model.setViewName("user/signup");
+  } else {
+   userService.saveUser(user);
+   model.addObject("msg", "User has been registered successfully!");
+   model.addObject("user", new User());
+   model.setViewName("user/signup");
+  }
+  
+  return model;
+ }
+ 
+ @RequestMapping(value= {"/home/home"}, method=RequestMethod.GET)
+ public ModelAndView home() {
+  ModelAndView model = new ModelAndView();
+  Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+  User user = userService.findUserByEmail(auth.getName());
+  
+  model.addObject("userName", user.getFirstname() + " " + user.getLastname());
+  model.setViewName("home/home");
+  return model;
+ }
+ 
+ @RequestMapping(value= {"/access_denied"}, method=RequestMethod.GET)
+ public ModelAndView accessDenied() {
+  ModelAndView model = new ModelAndView();
+  model.setViewName("errors/access_denied");
+  return model;
+ }
+}
+
+Configuration application.properties file
+We need to configure the database (database URL, username, password), Hibernate and Thumeleaf. Open src/main/resources/application.properties file and add the following properties.
+
+# database configurations
+spring.datasource.url= jdbc:mysql://localhost:3306/jackrutorial
+spring.datasource.username=root
+spring.datasource.password=root
+
+# hibernate configurations
+spring.jpa.show-sql=true
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.properties.hibernate.dialet= org.hibernate.dialect.MySQL5Dialect
+
+# thumeleaf configurations
+spring.thymeleaf.mode= LEGACYHTML5
+spring.thymeleaf.cache=false
+
+View Layer
+Create user folder under src\main\resources\templates\ folder.
+Create login.html and signup.html file under src\main\resources\templates\user\ folder and write the following code in it.
+login.html
+
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+ xmlns:th="http://www.thymeleaf.org">
+
+<head>
+ <title>Sign in</title>
+ <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+ <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+ <script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
+ <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.0.0/css/font-awesome.min.css">
+</head>
+
+<body>
+ <div class="container">
+  <div class="alert alert-danger" role="alert" th:if="${param.error}">
+   The email or password is incorrect!
+  </div>
+        <form th:action="@{/login}" method="post" >
+          <h1 class="h3 mb-3 font-weight-normal">Sign in</h1>
+    <label for="inputEmail" class="sr-only">Email</label>
+       <input type="email" id="email" name="email" class="form-control" placeholder="Email" required autofocus>
+       <label for="inputPassword" class="sr-only">Password</label>
+       <input type="password" id="password" name="password" class="form-control" placeholder="Password" required>
+       <div class="checkbox mb-3">
+         <label>
+           <input type="checkbox" name="remember-me" /> Remember me
+         </label>
+       </div>
+       <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
+       <div class="margin-top20 text-center"> Don't have an account? <a th:href="@{/signup}">Create an account</a></div>
+  </form>
+    </div>
+</body>
+</html>
+
+signup.html
+
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml"
+ xmlns:th="http://www.thymeleaf.org">
+<head>
+ <title>Sign up</title>
+ <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+ <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+ <script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
+ <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.0.0/css/font-awesome.min.css">
+</head>
+<body>
+ <div class="container">
+     <form class="form-horizontal" role="form" method="POST" th:action="@{/signup}" th:object="${user}">
+      <div class="row">
+             <div class="col-md-3"></div>
+             <div class="col-md-6">
+              <div class="alert alert-success" role="alert" th:if="${msg}" th:utext="${msg}">
+     </div>
+             </div>
+         </div>
+         <div class="row">
+             <div class="col-md-3"></div>
+             <div class="col-md-6">
+                 <h2>Register New User</h2>
+                 <hr>
+             </div>
+         </div>
+         <div class="row">
+             <div class="col-md-3 field-label-responsive">
+                 <label for="name">First Name</label>
+             </div>
+             <div class="col-md-6">
+                 <div class="form-group">
+                     <div class="input-group mb-2 mr-sm-2 mb-sm-0">
+                         <div class="input-group-addon" style="width: 2.6rem"><i class="fa fa-user"></i></div>
+                         <input type="text" th:field="*{firstname}" class="form-control" id="firstname"
+                                placeholder="First Name" required autofocus>
+                     </div>
+                 </div>
+             </div>
+         </div>
+         <div class="row">
+             <div class="col-md-3 field-label-responsive">
+                 <label for="name">Last Name</label>
+             </div>
+             <div class="col-md-6">
+                 <div class="form-group">
+                     <div class="input-group mb-2 mr-sm-2 mb-sm-0">
+                         <div class="input-group-addon" style="width: 2.6rem"><i class="fa fa-user"></i></div>
+                         <input type="text" th:field="*{lastname}" class="form-control" id="lastname"
+                                placeholder="Last name" required autofocus>
+                     </div>
+                 </div>
+             </div>
+         </div>
+         <div class="row">
+             <div class="col-md-3 field-label-responsive">
+                 <label for="email">Email</label>
+             </div>
+             <div class="col-md-6">
+                 <div class="form-group">
+                     <div class="input-group mb-2 mr-sm-2 mb-sm-0">
+                         <div class="input-group-addon" style="width: 2.6rem"><i class="fa fa-at"></i></div>
+                         <input type="text" th:field="*{email}" class="form-control" id="email"
+                                placeholder="username@jackrutorial.com" required autofocus>
+                     </div>
+                 </div>
+             </div>
+             <div class="col-md-3">
+                 <div class="form-control-feedback">
+                         <span class="text-danger align-middle" th:if="${#fields.hasErrors('email')}" th:errors="*{email}">
+                         </span>
+                 </div>
+             </div>
+         </div>
+         <div class="row">
+             <div class="col-md-3 field-label-responsive">
+                 <label for="password">Password</label>
+             </div>
+             <div class="col-md-6">
+                 <div class="form-group has-danger">
+                     <div class="input-group mb-2 mr-sm-2 mb-sm-0">
+                         <div class="input-group-addon" style="width: 2.6rem"><i class="fa fa-key"></i></div>
+                         <input type="password" th:field="*{password}" class="form-control" id="password"
+                                placeholder="Password" required>
+                     </div>
+                 </div>
+             </div>
+             <div class="col-md-3">
+                 <div class="form-control-feedback">
+                         <span class="text-danger align-middle" th:if="${#fields.hasErrors('password')}" th:errors="*{password}">
+                         </span>
+                 </div>
+             </div>
+         </div>
+         <div class="row">
+             <div class="col-md-3"></div>
+             <div class="col-md-6">
+                 <button type="submit" class="btn btn-success"><i class="fa fa-user-plus"></i> Register</button>
+             </div>
+         </div>
+     </form>
+ </div>
+</body>
+</html>
